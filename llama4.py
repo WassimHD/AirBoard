@@ -1,23 +1,40 @@
-import requests, os
+import requests, os, json
+
+#open json file to get api key  
+def get_api_key():
+    with open('keys.json') as f:
+        data = json.load(f)
+        return data['llama_4_api_key']
 
 
-# API_KEY = os.getenv("OPENROUTER_API_KEY")
-# API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-API_KEY="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"
+def llama4_scout(query):
+    try:
+        query=f"Answer the following question shortly and precisely : {query}"
+        API_KEY=get_api_key()
+        print("Using API Key:", API_KEY)
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "meta-llama/llama-4-scout:free",  
+            "messages": [
+                { "role": "user", "content": query }
+            ],
+            "max_tokens": 200
+        }
 
+        resp = requests.post(url, headers=headers, json=payload)
+        data = resp.json()
+        
+        if "choices" in data:
+            return data["choices"][0]["message"]["content"]
+        else:
+            print("Error response:", data)
+            return None
 
-url = "https://openrouter.ai/api/v1/chat/completions"
-headers = {
-  "Authorization": f"Bearer {API_KEY}",
-  "Content-Type": "application/json"
-}
-payload = {
-  "model": "meta-llama/llama-4-scout:free",   # example model name
-  "messages": [
-    { "role": "user", "content": "do you know a company calle Bed and Sun ?" }
-  ],
-  "max_tokens": 50
-}
-resp = requests.post(url, headers=headers, json=payload)
-print(resp.json()["choices"][0]["message"]["content"])
+    except Exception as e:  
+        print("Error:", e)
+        return None
